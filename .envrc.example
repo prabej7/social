@@ -1,0 +1,8 @@
+export ADDR=":8080"
+export DB_MAX_OPEN_CONNS=10
+export DB_MAX_IDLE_CONNS=5
+export DB_MAX_IDLE_TIME=15m
+export DB_ADDR="postgres://username:password@localhost:5433/social?sslmode=disable"
+export POSTGRES_USER=username
+export POSTGRES_PASSWORD=password
+export POSTGRES_DB=social
