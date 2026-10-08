@@ -24,6 +24,7 @@ type dbConfig struct {
 type config struct {
 	addr string
 	db   dbConfig
+	env  string
 }
 
 func (app *application) mount() http.Handler {
@@ -36,7 +37,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Timeout(60 * time.Second))
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/health", app.health)
+		r.Get("/health", app.healthCheckHandler)
 	})
 
 	return r
