@@ -8,6 +8,8 @@ import (
 	"github.com/prabej7/social/internal/store"
 )
 
+const version = "0.0.1"
+
 func main() {
 	if err := env.LoadFile(".envrc"); err != nil {
 		log.Fatalf("failed to load environment file: %v", err)
@@ -21,6 +23,7 @@ func main() {
 			maxIdleConns: env.GetInt("DB_MAX_OPEN_CONNS", 30),
 			maxIdleTime:  env.GetString("DB_MAX_IDLE_TIME", "15min"),
 		},
+		env: env.GetString("ENV", "development"),
 	}
 
 	db, err := db.New(
