@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-func (app *application) healthCheckHandler(w http.ResponseWriter, _ *http.Request) {
+func (app *application) healthCheckHandler(w http.ResponseWriter, r *http.Request) {
 	data := map[string]string{
 		"status":  "ok",
 		"env":     app.config.env,
@@ -12,6 +12,6 @@ func (app *application) healthCheckHandler(w http.ResponseWriter, _ *http.Reques
 	}
 
 	if err := writeJson(w, http.StatusOK, data); err != nil {
-		writeJsonError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 	}
 }
