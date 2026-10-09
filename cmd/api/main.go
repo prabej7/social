@@ -47,7 +47,7 @@ func main() {
 		store:  store,
 	}
 
-	log.Printf("server is running at: %s", app.config.addr)
+	log.Printf("server is running at: http://localhost%s", app.config.addr)
 
 	log.Fatal(app.run(app.mount()))
 }
