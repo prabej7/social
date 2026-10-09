@@ -36,6 +36,12 @@ func (app *application) mount() http.Handler {
 
 	r.Use(middleware.Timeout(60 * time.Second))
 
+	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
+		writeJson(w, http.StatusOK, map[string]string{
+			"message": "Welcome to social API!",
+		})
+	})
+
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
 
