@@ -33,7 +33,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 
 	if err := app.store.Posts.Create(r.Context(), post); err != nil {
-		writeJson(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
@@ -57,13 +57,13 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 		case errors.Is(err, store.NotFoundError):
 			writeJsonError(w, http.StatusNotFound, err.Error())
 		default:
-			writeJsonError(w, http.StatusInternalServerError, err.Error())
+			app.internalServerError(w, r, err)
 		}
 		return
 	}
 
 	if err := writeJson(w, http.StatusOK, post); err != nil {
-		writeJsonError(w, http.StatusInternalServerError, err.Error())
+		app.internalServerError(w, r, err)
 		return
 	}
 
