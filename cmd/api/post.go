@@ -19,7 +19,7 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	var payload CreatePostPayload
 
 	if err := readJson(w, r, &payload); err != nil {
-		writeJsonError(w, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -46,7 +46,7 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	parsedId, err := strconv.ParseInt(id, 10, 64)
 
 	if err != nil {
-		writeJsonError(w, http.StatusBadRequest, err.Error())
+		app.badRequestResponse(w, r, err)
 		return
 	}
 
@@ -55,7 +55,7 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	if err != nil {
 		switch {
 		case errors.Is(err, store.NotFoundError):
-			writeJsonError(w, http.StatusNotFound, err.Error())
+			app.notFoundError(w, r, err)
 		default:
 			app.internalServerError(w, r, err)
 		}
