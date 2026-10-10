@@ -3,12 +3,19 @@ package main
 import (
 	"log"
 
+	"github.com/go-playground/validator/v10"
 	"github.com/prabej7/social/internal/db"
 	"github.com/prabej7/social/internal/env"
 	"github.com/prabej7/social/internal/store"
 )
 
 const version = "0.0.1"
+
+var Validate *validator.Validate
+
+func init() {
+	Validate = validator.New(validator.WithRequiredStructEnabled())
+}
 
 func main() {
 	if err := env.LoadFile(".envrc"); err != nil {
