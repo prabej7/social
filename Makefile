@@ -14,4 +14,9 @@ migrate-up:
 .PHONY: migrate-down
 migrate-down:
 	@echo "Rolling back migrations..."
-	@migrate -path $(MIGRATIONS_DIR) -database $(DB_ADDR) down ${filter-out $@,$(MAKECMDGOALS)}	
+	@migrate -path $(MIGRATIONS_DIR) -database $(DB_ADDR) down $(filter-out $@,$(MAKECMDGOALS))
+
+.PHONY: migrate-force
+migrate-force:
+	@echo "Forcing migration version $(version)..."
+	@migrate -path $(MIGRATIONS_DIR) -database $(DB_ADDR) force $(version)
