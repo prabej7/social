@@ -17,17 +17,7 @@ type CreatePostPayload struct {
 }
 
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-	var payload CreatePostPayload
-
-	if err := readJson(w, r, &payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	if err := Validate.Struct(payload); err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
+	var payload CreatePostPayload = r.Context().Value(BodyKey).(CreatePostPayload)
 
 	userId := 1
 
