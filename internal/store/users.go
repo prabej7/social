@@ -6,18 +6,18 @@ import (
 )
 
 type User struct {
-	ID        int64  `json:"id"`
-	UserName  string `json:"username"`
-	Email     string `json:"email"`
+	ID        int64  `json:"id,omitempty"`
+	UserName  string `json:"username,omitempty"`
+	Email     string `json:"email,omitempty"`
 	Password  string `json:"-"`
-	CreatedAt string `json:"createdAt"`
+	CreatedAt string `json:"createdAt,omitempty"`
 }
 
-type UsersStorage struct {
+type UserStorage struct {
 	db *sql.DB
 }
 
-func (s *UsersStorage) Create(ctx context.Context, user *User) error {
+func (s *UserStorage) Create(ctx context.Context, user *User) error {
 	query := `
 	INSERT INTO users (username, email, password)
 	VALUES ($1, $2, $2) RETURNING id, created_at
