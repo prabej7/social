@@ -9,13 +9,14 @@ import (
 )
 
 type Post struct {
-	ID        int64    `json:"id"`
-	Content   string   `json:"content"`
-	Title     string   `json:"title"`
-	Tags      []string `json:"tags"`
-	UserID    int64    `json:"user_id"`
-	CreatedAt string   `json:"createdAt"`
-	UpdatedAt string   `json:"updatedAt"`
+	ID        int64     `json:"id"`
+	Content   string    `json:"content"`
+	Title     string    `json:"title"`
+	Tags      []string  `json:"tags"`
+	UserID    int64     `json:"user_id"`
+	CreatedAt string    `json:"createdAt"`
+	UpdatedAt string    `json:"updatedAt"`
+	Comments  []Comment `json:"comments"`
 }
 
 type PostStorage struct {
