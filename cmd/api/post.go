@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/prabej7/social/internal/store"
 )
+
+const postContextKey contextKey = "post"
 
 type CreatePostPayload struct {
 	Title   string   `json:"title" validate:"required,max=100"`
@@ -37,28 +40,9 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 }
 
 func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	post := getPostContext(r)
 
-	parsedId, err := strconv.ParseInt(id, 10, 64)
-
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	post, err := app.store.Posts.GetById(r.Context(), parsedId)
-
-	if err != nil {
-		switch {
-		case errors.Is(err, store.NotFoundError):
-			app.notFoundError(w, r, fmt.Errorf("post not found"))
-		default:
-			app.internalServerError(w, r, err)
-		}
-		return
-	}
-
-	comments, err := app.store.Comments.GetByPostId(r.Context(), parsedId)
+	comments, err := app.store.Comments.GetByPostId(r.Context(), post.ID)
 
 	if err != nil {
 		app.internalServerError(w, r, err)
@@ -75,23 +59,17 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 }
 
 type UpdatePostPayload struct {
-	Title   string   `json:"title,omitempty"`
-	Content string   `json:"content,omitempty"`
-	Tags    []string `json:"tags,omitempty"`
+	Title   string   `json:"title" validate:"omitempty,max=100"`
+	Content string   `json:"content" validate:"omitempty,max=1000"`
+	Tags    []string `json:"tags" validate:"omitempty"`
 }
 
 func (app *application) update(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	postContext := getPostContext(r)
+
 	post := r.Context().Value(BodyKey).(UpdatePostPayload)
-	fmt.Println(post.Tags)
-	parsedId, err := strconv.ParseInt(id, 10, 64)
 
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	updatedPost, err := app.store.Posts.Update(r.Context(), parsedId, store.Post{
+	updatedPost, err := app.store.Posts.Update(r.Context(), postContext.ID, store.Post{
 		Title:   post.Title,
 		Content: post.Content,
 		Tags:    post.Tags,
@@ -113,16 +91,9 @@ func (app *application) update(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) delete(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
+	postContext := getPostContext(r)
 
-	parsedId, err := strconv.ParseInt(id, 10, 64)
-
-	if err != nil {
-		app.badRequestResponse(w, r, err)
-		return
-	}
-
-	if err := app.store.Posts.DeleteById(r.Context(), parsedId); err != nil {
+	if err := app.store.Posts.DeleteById(r.Context(), postContext.ID); err != nil {
 		if errors.Is(store.NotFoundError, err) {
 			app.notFoundError(w, r, err)
 			return
@@ -137,5 +108,38 @@ func (app *application) delete(w http.ResponseWriter, r *http.Request) {
 		app.internalServerError(w, r, err)
 		return
 	}
+}
 
+func (app *application) postContextMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		id := chi.URLParam(r, "id")
+
+		parsedId, err := strconv.ParseInt(id, 10, 64)
+
+		if err != nil {
+			app.badRequestResponse(w, r, err)
+			return
+		}
+
+		post, err := app.store.Posts.GetById(r.Context(), parsedId)
+
+		if err != nil {
+			switch {
+			case errors.Is(err, store.NotFoundError):
+				app.notFoundError(w, r, fmt.Errorf("post not found"))
+			default:
+				app.internalServerError(w, r, err)
+			}
+			return
+		}
+
+		ctx := context.WithValue(r.Context(), postContextKey, post)
+
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func getPostContext(r *http.Request) *store.Post {
+	post := r.Context().Value(postContextKey).(*store.Post)
+	return post
 }
