@@ -16,6 +16,7 @@ type Post struct {
 	UserID    int64     `json:"user_id,omitempty"`
 	CreatedAt string    `json:"createdAt,omitempty"`
 	UpdatedAt string    `json:"updatedAt,omitempty"`
+	Version   int       `json:"version"`
 	Comments  []Comment `json:"comments,omitempty"`
 }
 
@@ -46,7 +47,7 @@ func (s *PostStorage) Create(ctx context.Context, post *Post) error {
 func (s *PostStorage) GetById(ctx context.Context, id int64) (*Post, error) {
 	var post Post
 	query := `
-	SELECT id, title, content, created_at, updated_at, user_Id, tags 
+	SELECT id, title, content, created_at, updated_at, user_Id, tags, version
 	FROM posts 
 	WHERE id=$1
 	`
@@ -59,6 +60,7 @@ func (s *PostStorage) GetById(ctx context.Context, id int64) (*Post, error) {
 		&post.UpdatedAt,
 		&post.UserID,
 		pq.Array(&post.Tags),
+		&post.Version,
 	); err != nil {
 		switch {
 		case errors.Is(err, sql.ErrNoRows):
@@ -74,9 +76,9 @@ func (s *PostStorage) GetById(ctx context.Context, id int64) (*Post, error) {
 func (s *PostStorage) Update(ctx context.Context, id int64, post Post) (*Post, error) {
 	query := `
 		UPDATE posts
-		SET title = $2, content = $3, tags = $4
-		WHERE id = $1
-		RETURNING id, title, content, tags
+		SET title = $2, content = $3, tags = $4, version = version + 1
+		WHERE id = $1 AND version=$5
+		RETURNING id, title, content, tags, version
 	`
 
 	row := s.db.QueryRowContext(
@@ -86,6 +88,7 @@ func (s *PostStorage) Update(ctx context.Context, id int64, post Post) (*Post, e
 		post.Title,
 		post.Content,
 		pq.Array(post.Tags),
+		post.Version,
 	)
 
 	var updatedPost Post
@@ -95,6 +98,7 @@ func (s *PostStorage) Update(ctx context.Context, id int64, post Post) (*Post, e
 		&updatedPost.Title,
 		&updatedPost.Content,
 		pq.Array(&updatedPost.Tags),
+		&updatedPost.Version,
 	)
 
 	if err != nil {
