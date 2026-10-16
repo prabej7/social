@@ -10,13 +10,13 @@ import (
 
 type Post struct {
 	ID        int64     `json:"id"`
-	Content   string    `json:"content"`
-	Title     string    `json:"title"`
-	Tags      []string  `json:"tags"`
-	UserID    int64     `json:"user_id"`
-	CreatedAt string    `json:"createdAt"`
-	UpdatedAt string    `json:"updatedAt"`
-	Comments  []Comment `json:"comments"`
+	Content   string    `json:"content,omitempty"`
+	Title     string    `json:"title,omitempty"`
+	Tags      []string  `json:"tags,omitempty"`
+	UserID    int64     `json:"user_id,omitempty"`
+	CreatedAt string    `json:"createdAt,omitempty"`
+	UpdatedAt string    `json:"updatedAt,omitempty"`
+	Comments  []Comment `json:"comments,omitempty"`
 }
 
 type PostStorage struct {
@@ -69,4 +69,63 @@ func (s *PostStorage) GetById(ctx context.Context, id int64) (*Post, error) {
 	}
 
 	return &post, nil
+}
+
+func (s *PostStorage) Update(ctx context.Context, id int64, post Post) (*Post, error) {
+	query := `
+		UPDATE posts
+		SET title = $2, content = $3, tags = $4
+		WHERE id = $1
+		RETURNING id, title, content, tags
+	`
+
+	row := s.db.QueryRowContext(
+		ctx,
+		query,
+		id,
+		post.Title,
+		post.Content,
+		pq.Array(post.Tags),
+	)
+
+	var updatedPost Post
+
+	err := row.Scan(
+		&updatedPost.ID,
+		&updatedPost.Title,
+		&updatedPost.Content,
+		pq.Array(&updatedPost.Tags),
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, NotFoundError
+		}
+		return nil, err
+	}
+
+	return &updatedPost, nil
+}
+
+func (s *PostStorage) DeleteById(ctx context.Context, id int64) error {
+	query := `
+		DELETE FROM posts
+		WHERE id = $1
+	`
+
+	result, err := s.db.ExecContext(ctx, query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return NotFoundError
+	}
+
+	return nil
 }
