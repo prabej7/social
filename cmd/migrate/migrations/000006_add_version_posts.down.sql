@@ -1,0 +1,1 @@
+ALTER posts DROP COLUMN version;
