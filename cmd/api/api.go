@@ -10,8 +10,9 @@ import (
 )
 
 type application struct {
-	config config
-	store  store.Storage
+	config  config
+	store   store.Storage
+	timeout time.Duration
 }
 
 type dbConfig struct {
@@ -35,6 +36,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Recoverer)
 
 	r.Use(middleware.Timeout(60 * time.Second))
+	r.Use(Timeout(app.timeout))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
 		writeJson(w, http.StatusOK, map[string]string{
