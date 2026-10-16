@@ -73,3 +73,69 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 	}
 
 }
+
+type UpdatePostPayload struct {
+	Title   string   `json:"title,omitempty"`
+	Content string   `json:"content,omitempty"`
+	Tags    []string `json:"tags,omitempty"`
+}
+
+func (app *application) update(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	post := r.Context().Value(BodyKey).(UpdatePostPayload)
+	fmt.Println(post.Tags)
+	parsedId, err := strconv.ParseInt(id, 10, 64)
+
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	updatedPost, err := app.store.Posts.Update(r.Context(), parsedId, store.Post{
+		Title:   post.Title,
+		Content: post.Content,
+		Tags:    post.Tags,
+	})
+
+	if err != nil {
+		if errors.Is(store.NotFoundError, err) {
+			app.notFoundError(w, r, err)
+			return
+		}
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJson(w, http.StatusOK, updatedPost); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) delete(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+
+	parsedId, err := strconv.ParseInt(id, 10, 64)
+
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := app.store.Posts.DeleteById(r.Context(), parsedId); err != nil {
+		if errors.Is(store.NotFoundError, err) {
+			app.notFoundError(w, r, err)
+			return
+		}
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := writeJson(w, http.StatusOK, map[string]string{
+		"message": "post deleted successfully",
+	}); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+}
