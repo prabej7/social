@@ -36,7 +36,10 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 		return
 	}
 
-	writeJson(w, http.StatusCreated, post)
+	if err := app.jsonResponse(w, http.StatusCreated, post); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
 }
 
 func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request) {
@@ -51,7 +54,7 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 
 	post.Comments = comments
 
-	if err := writeJson(w, http.StatusOK, post); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, post); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -59,20 +62,29 @@ func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Reques
 }
 
 type UpdatePostPayload struct {
-	Title   string   `json:"title" validate:"omitempty,max=100"`
-	Content string   `json:"content" validate:"omitempty,max=1000"`
-	Tags    []string `json:"tags" validate:"omitempty"`
+	Title   *string   `json:"title" validate:"omitempty,max=100"`
+	Content *string   `json:"content" validate:"omitempty,max=1000"`
+	Tags    *[]string `json:"tags" validate:"omitempty"`
 }
 
 func (app *application) update(w http.ResponseWriter, r *http.Request) {
-	postContext := getPostContext(r)
+	post := getPostContext(r)
 
-	post := r.Context().Value(BodyKey).(UpdatePostPayload)
+	postPayload := r.Context().Value(BodyKey).(UpdatePostPayload)
 
-	updatedPost, err := app.store.Posts.Update(r.Context(), postContext.ID, store.Post{
-		Title:   post.Title,
-		Content: post.Content,
-		Tags:    post.Tags,
+	if postPayload.Content == nil {
+		postPayload.Content = &post.Content
+	}
+
+	if postPayload.Title == nil {
+		postPayload.Title = &post.Title
+	}
+
+	updatedPost, err := app.store.Posts.Update(r.Context(), post.ID, store.Post{
+		Title:   *postPayload.Title,
+		Content: *postPayload.Content,
+		Tags:    *postPayload.Tags,
+		Version: post.Version,
 	})
 
 	if err != nil {
@@ -84,7 +96,7 @@ func (app *application) update(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := writeJson(w, http.StatusOK, updatedPost); err != nil {
+	if err := app.jsonResponse(w, http.StatusOK, updatedPost); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -102,7 +114,7 @@ func (app *application) delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := writeJson(w, http.StatusOK, map[string]string{
+	if err := app.jsonResponse(w, http.StatusOK, map[string]string{
 		"message": "post deleted successfully",
 	}); err != nil {
 		app.internalServerError(w, r, err)
