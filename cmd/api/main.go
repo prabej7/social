@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"time"
 
 	"github.com/go-playground/validator/v10"
 	"github.com/prabej7/social/internal/db"
@@ -50,8 +51,9 @@ func main() {
 	store := store.NewStorage(db)
 
 	app := &application{
-		config: cfg,
-		store:  store,
+		config:  cfg,
+		store:   store,
+		timeout: time.Second * 5,
 	}
 
 	log.Printf("server is running at: http://localhost%s", app.config.addr)
