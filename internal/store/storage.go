@@ -17,6 +17,8 @@ type Users interface {
 type Posts interface {
 	Create(ctx context.Context, posts *Post) error
 	GetById(ctx context.Context, id int64) (*Post, error)
+	Update(ctx context.Context, id int64, post Post) (*Post, error)
+	DeleteById(ctx context.Context, id int64) error
 }
 
 type Comments interface {
