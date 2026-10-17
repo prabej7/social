@@ -61,6 +61,10 @@ func (app *application) mount() http.Handler {
 		r.Route("/comment", func(r chi.Router) {
 			r.Post("/", validatePayload[CreateCommentPayload](app.createCommentHandler))
 		})
+
+		r.Route("/user", func(r chi.Router) {
+			r.Get("/{id}", app.getUserHandler)
+		})
 	})
 
 	return r
