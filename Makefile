@@ -20,3 +20,8 @@ migrate-down:
 migrate-force:
 	@echo "Forcing migration version $(version)..."
 	@migrate -path $(MIGRATIONS_DIR) -database $(DB_ADDR) force $(version)
+
+.PHONY: seed
+seed:
+	@echo "Seeding database..."
+	@go run ./cmd/migrate/seed/main.go
