@@ -12,6 +12,7 @@ var (
 
 type Users interface {
 	Create(ctx context.Context, user *User) error
+	GetById(ctx context.Context, id int64) (*User, error)
 }
 
 type Posts interface {
