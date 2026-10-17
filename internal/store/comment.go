@@ -44,8 +44,10 @@ func (s *CommentStore) GetByPostId(ctx context.Context, postID int64) ([]Comment
 	defer rows.Close()
 
 	for rows.Next() {
-		var c Comment
-		c.User = User{}
+		c := Comment{
+			User: User{},
+		}
+
 		if err := rows.Scan(
 			&c.ID,
 			&c.PostID,
@@ -57,8 +59,36 @@ func (s *CommentStore) GetByPostId(ctx context.Context, postID int64) ([]Comment
 		); err != nil {
 			return nil, err
 		}
+
 		comments = append(comments, c)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
 	return comments, nil
+}
+
+func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
+	query := `
+		INSERT INTO comments
+		(content, post_id, user_id)
+		VALUES
+		($1, $2, $3)
+		RETURNING id
+	`
+
+	if err := s.db.QueryRowContext(
+		ctx,
+		query,
+		comment.Content,
+		comment.PostID,
+		comment.UserID,
+	).Scan(&comment.ID); err != nil {
+		return err
+	}
+
+	return nil
+
 }
