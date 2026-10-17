@@ -76,7 +76,7 @@ func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
 		(content, post_id, user_id)
 		VALUES
 		($1, $2, $3)
-		RETURNING id
+		RETURNING id, created_at, updated_at
 	`
 
 	if err := s.db.QueryRowContext(
@@ -85,7 +85,7 @@ func (s *CommentStore) Create(ctx context.Context, comment *Comment) error {
 		comment.Content,
 		comment.PostID,
 		comment.UserID,
-	).Scan(&comment.ID); err != nil {
+	).Scan(&comment.ID, &comment.CreatedAt, &comment.UpdatedAt); err != nil {
 		return err
 	}
 
