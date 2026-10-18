@@ -27,16 +27,23 @@ type Comments interface {
 	Create(ctx context.Context, comment *Comment) error
 }
 
+type Followers interface {
+	Follow(ctx context.Context, followerID, userId int64) error
+	UnFollow(ctx context.Context, followerID, userId int64) error
+}
+
 type Storage struct {
 	Users
 	Posts
 	Comments
+	Followers
 }
 
 func NewStorage(db *sql.DB) Storage {
 	return Storage{
-		Posts:    &PostStorage{db},
-		Users:    &UserStorage{db},
-		Comments: &CommentStore{db},
+		Posts:     &PostStorage{db},
+		Users:     &UserStorage{db},
+		Comments:  &CommentStore{db},
+		Followers: &FollowersStore{db},
 	}
 }
