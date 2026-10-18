@@ -8,6 +8,7 @@ import (
 
 var (
 	NotFoundError = errors.New("resource not found")
+	ConflictError = errors.New("resource already exists")
 )
 
 type Users interface {
