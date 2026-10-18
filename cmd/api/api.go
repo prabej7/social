@@ -63,7 +63,7 @@ func (app *application) mount() http.Handler {
 		})
 
 		r.Route("/user", func(r chi.Router) {
-			r.Get("/{id}", app.getUserHandler)
+			r.Get("/{id}", app.GetUserContext(app.getUserHandler))
 		})
 	})
 
