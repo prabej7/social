@@ -68,7 +68,12 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	payload := r.Context().Value(BodyKey).(FollowUser)
 
 	if err := app.store.Followers.Follow(r.Context(), followerUser.ID, payload.UserID); err != nil {
-		app.internalServerError(w, r, err)
+		switch err {
+		case store.ConflictError:
+			app.conflictError(w, r, err)
+		default:
+			app.internalServerError(w, r, err)
+		}
 		return
 	}
 
