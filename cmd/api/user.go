@@ -14,7 +14,7 @@ import (
 var userContextKey contextKey = "user"
 
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(userContextKey).(*store.User)
+	user := app.getUserFromContext(r)
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
 		app.internalServerError(w, r, err)
@@ -49,4 +49,47 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (app *application) getUserFromContext(r *http.Request) *store.User {
+	user := r.Context().Value(userContextKey).(*store.User)
+
+	return user
+}
+
+type FollowUser struct {
+	UserID int64 `json:"user_id"`
+}
+
+func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
+	followerUser := app.getUserFromContext(r)
+
+	// TODO: Revert back to auth User
+	payload := r.Context().Value(BodyKey).(FollowUser)
+
+	if err := app.store.Followers.Follow(r.Context(), followerUser.ID, payload.UserID); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
+
+func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Request) {
+	unFollowedUser := app.getUserFromContext(r)
+	// TODO: Revert back to auth User
+	payload := r.Context().Value(BodyKey).(FollowUser)
+
+	if err := app.store.Followers.UnFollow(r.Context(), unFollowedUser.ID, payload.UserID); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
 }
