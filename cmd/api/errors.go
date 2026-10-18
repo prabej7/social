@@ -33,3 +33,11 @@ func (app *application) notFoundError(w http.ResponseWriter, r *http.Request, er
 		Message: err.Error(),
 	})
 }
+
+func (app *application) conflictError(w http.ResponseWriter, r *http.Request, err error) {
+	log.Println("resource already exists error:", r.Method, r.URL.Path, err.Error())
+	writeJson(w, http.StatusConflict, ErrorResponse{
+		Success: false,
+		Message: err.Error(),
+	})
+}
