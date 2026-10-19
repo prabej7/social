@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"net/http"
 	"time"
 
@@ -9,8 +8,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prabej7/social/internal/store"
 
+	"github.com/prabej7/social/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
-	"github.com/swaggo/swag/example/basic/docs"
 )
 
 type application struct {
@@ -52,7 +51,7 @@ func (app *application) mount() http.Handler {
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
 
-		docsURL := fmt.Sprintf("%s/swagger/doc.json", app.config.addr)
+		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
 		r.Route("/post", func(r chi.Router) {
