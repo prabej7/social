@@ -98,3 +98,36 @@ func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 }
+
+func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
+	fq := store.PaginatedFeedQuery{
+		Limit:  20,
+		Offset: 0,
+		Sort:   "desc",
+	}
+
+	fq, err := fq.Parse(r)
+
+	if err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	if err := Validate.Struct(fq); err != nil {
+		app.badRequestResponse(w, r, err)
+		return
+	}
+
+	userID := 1 // revert to auth userID
+	feed, err := app.store.Posts.GetUserFeed(r.Context(), int64(userID), fq)
+
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, feed); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+}
