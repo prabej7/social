@@ -147,23 +147,37 @@ func (s *PostStorage) DeleteById(ctx context.Context, id int64) error {
 
 func (s *PostStorage) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFeedQuery) ([]*PostWithMetaData, error) {
 	query := `
-		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, COUNT(c.id) AS comment_count, u.username, u.email
-		FROM
-    		posts p
-    	LEFT JOIN comments c ON c.post_id = p.id
-    	LEFT JOIN followers f on f.follower_id = p.user_id
-    		or p.user_id = $1
-    	LEFT JOIN users u on u.id = p.user_id
+		SELECT
+			p.id, p.user_id, p.title, p.content, p.created_at,
+			p.tags, COUNT(c.id) AS comment_count,
+			u.username, u.email
+		FROM posts p
+		LEFT JOIN comments c ON c.post_id = p.id
+		LEFT JOIN followers f ON f.follower_id = p.user_id
+		LEFT JOIN users u ON u.id = p.user_id
 		WHERE
-    		f.user_id = $1
-    		or p.user_id = $1
-		GROUP BY
-    		p.id, u.id
+			(f.user_id = $1 OR p.user_id = $1)
+			AND ($4 = '' OR p.title ILIKE '%' || $4 || '%'
+				OR p.content ILIKE '%' || $4 || '%')
+			AND (p.tags @> $5 OR $5 = '{}')
+			AND ($6::timestamptz IS NULL OR p.created_at >= $6)
+			AND ($7::timestamptz IS NULL OR p.created_at <= $7)
+		GROUP BY p.id, u.id
 		ORDER BY p.created_at ` + fq.Sort + `
 		LIMIT $2 OFFSET $3
-	`
-	rows, err := s.db.QueryContext(ctx, query, userID, fq.Limit, fq.Offset)
+			`
 
+	rows, err := s.db.QueryContext(
+		ctx,
+		query,
+		userID,
+		fq.Limit,
+		fq.Offset,
+		fq.Search,
+		pq.Array(fq.Tags),
+		fq.Since,
+		fq.Until,
+	)
 	if err != nil {
 		return nil, err
 	}
