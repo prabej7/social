@@ -29,4 +29,4 @@ seed:
 .PHONY: gen-docs
 gen-docs:
 	@echo "Generating API documentation..."
-	@swag init -g ./api/main.go -d cmd,internal && swag fmt
+	@swag init -g main.go -d cmd/api,internal && swag fmt
