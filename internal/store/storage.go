@@ -21,7 +21,7 @@ type Posts interface {
 	GetById(ctx context.Context, id int64) (*Post, error)
 	Update(ctx context.Context, id int64, post Post) (*Post, error)
 	DeleteById(ctx context.Context, id int64) error
-	GetUserFeed(ctx context.Context, userID int64, fq PaginatedFeedQuery) ([]*PostWithMetaData, error) 
+	GetUserFeed(ctx context.Context, userID int64, fq PaginatedFeedQuery) ([]*PostWithMetaData, error)
 }
 
 type Comments interface {

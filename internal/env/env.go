@@ -13,7 +13,7 @@ func LoadFile(path string) error {
 
 func GetString(key, fallback string) string {
 	val, exists := os.LookupEnv(key)
-	
+
 	if !exists {
 		return fallback
 	}

@@ -103,32 +103,32 @@ func generatePosts(users []*store.User) []*store.Post {
 }
 
 func generateComments(posts []*store.Post, users []*store.User) []*store.Comment {
-    if len(users) == 0 {
-        return nil
-    }
+	if len(users) == 0 {
+		return nil
+	}
 
-    if len(db.Comments) == 0 {
-        return nil
-    }
+	if len(db.Comments) == 0 {
+		return nil
+	}
 
-    comments := make([]*store.Comment, 0, len(posts))
+	comments := make([]*store.Comment, 0, len(posts))
 
-    for _, post := range posts {
-        if post == nil {
-            continue
-        }
+	for _, post := range posts {
+		if post == nil {
+			continue
+		}
 
-        user := users[rand.Intn(len(users))]
-        if user == nil {
-            continue
-        }
+		user := users[rand.Intn(len(users))]
+		if user == nil {
+			continue
+		}
 
-        comments = append(comments, &store.Comment{
-            PostID:  post.ID,
-            UserID:  user.ID,
-            Content: db.Comments[rand.Intn(len(db.Comments))],
-        })
-    }
+		comments = append(comments, &store.Comment{
+			PostID:  post.ID,
+			UserID:  user.ID,
+			Content: db.Comments[rand.Intn(len(db.Comments))],
+		})
+	}
 
-    return comments
+	return comments
 }
