@@ -20,6 +20,17 @@ type Post struct {
 	Comments  []Comment `json:"comments,omitempty"`
 }
 
+type UserPost struct {
+	Username string `json:"username"`
+	Email    string `json:"email"`
+}
+
+type PostWithMetaData struct {
+	Post          `json:"post"`
+	CommentsCount int      `json:"comment_count"`
+	User          UserPost `json:"user"`
+}
+
 type PostStorage struct {
 	db *sql.DB
 }
@@ -132,4 +143,57 @@ func (s *PostStorage) DeleteById(ctx context.Context, id int64) error {
 	}
 
 	return nil
+}
+
+func (s *PostStorage) GetUserFeed(ctx context.Context, userID int64, fq PaginatedFeedQuery) ([]*PostWithMetaData, error) {
+	query := `
+		SELECT p.id, p.user_id, p.title, p.content, p.created_at, p.tags, COUNT(c.id) AS comment_count, u.username, u.email
+		FROM
+    		posts p
+    	LEFT JOIN comments c ON c.post_id = p.id
+    	LEFT JOIN followers f on f.follower_id = p.user_id
+    		or p.user_id = $1
+    	LEFT JOIN users u on u.id = p.user_id
+		WHERE
+    		f.user_id = $1
+    		or p.user_id = $1
+		GROUP BY
+    		p.id, u.id
+		ORDER BY p.created_at ` + fq.Sort + `
+		LIMIT $2 OFFSET $3
+	`
+	rows, err := s.db.QueryContext(ctx, query, userID, fq.Limit, fq.Offset)
+
+	if err != nil {
+		return nil, err
+	}
+
+	if rows.Err() != nil {
+		return nil, rows.Err()
+	}
+
+	defer rows.Close()
+
+	var posts []*PostWithMetaData
+	for rows.Next() {
+		var post PostWithMetaData
+		if err := rows.Scan(
+			&post.ID,
+			&post.UserID,
+			&post.Title,
+			&post.Content,
+			&post.CreatedAt,
+			pq.Array(&post.Tags),
+			&post.CommentsCount,
+			&post.User.Username,
+			&post.User.Email,
+		); err != nil {
+			return nil, err
+		}
+
+		posts = append(posts, &post)
+	}
+
+	return posts, nil
+
 }
