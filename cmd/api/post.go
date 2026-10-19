@@ -19,6 +19,18 @@ type CreatePostPayload struct {
 	Tags    []string `json:"tags"`
 }
 
+// createPostHandler godoc
+//
+//	@Summary		Create a post
+//	@Description	Create a new post.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			body	body		CreatePostPayload	true	"Post payload"
+//	@Success		201		{object}	store.Post
+//	@Failure		400		{object}	map[string]string
+//	@Failure		500		{object}	map[string]string
+//	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
 	var payload CreatePostPayload = r.Context().Value(BodyKey).(CreatePostPayload)
 
@@ -42,6 +54,18 @@ func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// getPostByIdHandler godoc
+//
+//	@Summary		Get a post
+//	@Description	Get a post and its comments by ID.
+//	@Tags			posts
+//	@Produce		json
+//	@Param			id	path		int	true	"Post ID"
+//	@Success		200	{object}	store.Post
+//	@Failure		400	{object}	map[string]string
+//	@Failure		404	{object}	map[string]string
+//	@Failure		500	{object}	map[string]string
+//	@Router			/posts/{id} [get]
 func (app *application) getPostByIdHandler(w http.ResponseWriter, r *http.Request) {
 	post := getPostContext(r)
 
@@ -67,6 +91,20 @@ type UpdatePostPayload struct {
 	Tags    *[]string `json:"tags" validate:"omitempty"`
 }
 
+// update godoc
+//
+//	@Summary		Update a post
+//	@Description	Update a post by ID.
+//	@Tags			posts
+//	@Accept			json
+//	@Produce		json
+//	@Param			id		path		int					true	"Post ID"
+//	@Param			body	body		UpdatePostPayload	true	"Post update payload"
+//	@Success		200		{object}	store.Post
+//	@Failure		400		{object}	map[string]string
+//	@Failure		404		{object}	map[string]string
+//	@Failure		500		{object}	map[string]string
+//	@Router			/posts/{id} [patch]
 func (app *application) update(w http.ResponseWriter, r *http.Request) {
 	post := getPostContext(r)
 
@@ -102,6 +140,18 @@ func (app *application) update(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// delete godoc
+//
+//	@Summary		Delete a post
+//	@Description	Delete a post by ID.
+//	@Tags			posts
+//	@Produce		json
+//	@Param			id	path		int	true	"Post ID"
+//	@Success		200	{object}	map[string]string
+//	@Failure		400	{object}	map[string]string
+//	@Failure		404	{object}	map[string]string
+//	@Failure		500	{object}	map[string]string
+//	@Router			/posts/{id} [delete]
 func (app *application) delete(w http.ResponseWriter, r *http.Request) {
 	postContext := getPostContext(r)
 

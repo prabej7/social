@@ -13,6 +13,18 @@ import (
 
 var userContextKey contextKey = "user"
 
+// GetUser godoc
+//
+//	@Summary		Get user
+//	@Description	Get a user by ID
+//	@Tags			users
+//	@Produce		json
+//	@Param			id	path		int	true	"User ID"
+//	@Success		200	{object}	store.User
+//	@Failure		400	{object}	error
+//	@Failure		404	{object}	error
+//	@Faiure			500 {object} error
+//	@Router			/user/{id} [get]
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
 	user := app.getUserFromContext(r)
 
@@ -61,6 +73,18 @@ type FollowUser struct {
 	UserID int64 `json:"user_id"`
 }
 
+// FollowUser godoc
+//
+//	@Summary		Follow a user
+//	@Description	Follow a user by id
+//	@Tags			users
+//	@Produce		json
+//	@Success		204
+//	@Failure		400	{object}	error
+//	@Failure		404	{object}	error
+//	@Failure		409	{object}	error
+//	@Failure		500	{object}	error
+//	@Router			/user/follow [post]
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
 	followerUser := app.getUserFromContext(r)
 
@@ -83,6 +107,19 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 	}
 }
 
+// UnFollowUser godoc
+//
+//	@Summary		Unfollow a user
+//	@Description	Unfollow a user by ID
+//	@Tags			users
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body	FollowUser	true	"User to unfollow"
+//	@Success		204
+//	@Failure		400	{object}	error
+//	@Failure		404	{object}	error
+//	@Failure		500	{object}	error
+//	@Router			/user/unfollow [post]
 func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Request) {
 	unFollowedUser := app.getUserFromContext(r)
 	// TODO: Revert back to auth User
@@ -99,6 +136,19 @@ func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Reque
 	}
 }
 
+// GetUserFeed godoc
+//
+//	@Summary		Get user feed
+//	@Description	Get the authenticated user's feed
+//	@Tags			users
+//	@Produce		json
+//	@Param			limit	query		int		false	"Number of posts to return"
+//	@Param			offset	query		int		false	"Number of posts to skip"
+//	@Param			sort	query		string	false	"Sort order"
+//	@Success		200		{array}		store.Post
+//	@Failure		400		{object}	error
+//	@Failure		500		{object}	error
+//	@Router			/user/feed [get]
 func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Request) {
 	fq := store.PaginatedFeedQuery{
 		Limit:  20,

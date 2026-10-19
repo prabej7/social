@@ -12,6 +12,17 @@ type CreateCommentPayload struct {
 	PostId  int64  `json:"post_id" validate:"required"`
 }
 
+// createCommentHandler godoc
+//
+//	@Summary		Create a comment
+//	@Description	Creates a comment for a post.
+//	@Tags			comments
+//	@Accept			json
+//	@Produce		json
+//	@Param			comment		body		CreateCommentPayload	true	"Comment payload"
+//	@Success		200			{object}	store.Comment
+//	@Failure		500			{object}	map[string]string
+//	@Router			/comments	[post]
 func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
