@@ -70,6 +70,10 @@ func (app *application) mount() http.Handler {
 				r.Put("/unfollow", validatePayload[FollowUser](app.unFollowUserHandler))
 			})
 		})
+
+		r.Group(func(r chi.Router) {
+			r.Get("/user/feed", app.getUserFeedHandler)
+		})
 	})
 
 	return r
