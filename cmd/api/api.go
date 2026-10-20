@@ -28,11 +28,16 @@ type dbConfig struct {
 	maxIdleTime  string
 }
 
+type mailConfig struct {
+	exp time.Duration
+}
+
 type config struct {
 	addr   string
 	db     dbConfig
 	env    string
 	apiUrl string
+	mail   mailConfig
 }
 
 func (app *application) mount() http.Handler {
@@ -83,6 +88,10 @@ func (app *application) mount() http.Handler {
 
 		r.Group(func(r chi.Router) {
 			r.Get("/user/feed", app.getUserFeedHandler)
+		})
+
+		r.Route("/authentication", func(r chi.Router) {
+			r.Post("/user", validatePayload[RegisterUserPayload](app.registerUserHandler))
 		})
 	})
 
