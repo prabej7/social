@@ -8,6 +8,7 @@ import (
 	"github.com/prabej7/social/internal/db"
 	"github.com/prabej7/social/internal/env"
 	"github.com/prabej7/social/internal/store"
+	"go.uber.org/zap"
 )
 
 const version = "0.0.1"
@@ -52,6 +53,10 @@ func main() {
 		env: env.GetString("ENV", "development"),
 	}
 
+	//logger
+	logger := zap.Must(zap.NewProduction()).Sugar()
+
+	// database
 	db, err := db.New(
 		cfg.db.addr,
 		cfg.db.maxOpenConns,
@@ -60,11 +65,11 @@ func main() {
 	)
 
 	if err != nil {
-		log.Panic(err)
+		logger.Fatal(err)
 	}
 
 	defer db.Close()
-	log.Println("database connection pool established")
+	logger.Info("database connection pool established")
 
 	store := store.NewStorage(db)
 
@@ -72,9 +77,10 @@ func main() {
 		config:  cfg,
 		store:   store,
 		timeout: time.Second * 5,
+		logger:  logger,
 	}
 
-	log.Printf("server is running at: http://localhost%s", app.config.addr)
+	logger.Infof("server is running at: http://localhost%s", app.config.addr)
 
-	log.Fatal(app.run(app.mount()))
+	logger.Fatal(app.run(app.mount()))
 }

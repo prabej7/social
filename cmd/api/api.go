@@ -8,6 +8,8 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prabej7/social/internal/store"
 
+	"go.uber.org/zap"
+
 	"github.com/prabej7/social/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -16,6 +18,7 @@ type application struct {
 	config  config
 	store   store.Storage
 	timeout time.Duration
+	logger  *zap.SugaredLogger
 }
 
 type dbConfig struct {
