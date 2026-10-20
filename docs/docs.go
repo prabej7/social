@@ -350,6 +350,40 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/activate/{token}": {
+            "get": {
+                "description": "Activate a user account using an activation token",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "users"
+                ],
+                "summary": "Activate a user",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Activation token",
+                        "name": "token",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {}
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {}
+                    }
+                }
+            }
+        },
         "/user/feed": {
             "get": {
                 "description": "Get the authenticated user's feed",
@@ -716,6 +750,9 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "integer"
+                },
+                "is_active": {
+                    "type": "boolean"
                 },
                 "username": {
                     "type": "string"

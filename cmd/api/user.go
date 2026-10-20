@@ -182,6 +182,17 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// Activate User godoc
+//
+//	@Summary		Activate a user
+//	@Description	Activate a user account using an activation token
+//	@Tags			users
+//	@Produce		json
+//	@Param			token	path	string	true	"Activation token"
+//	@Success		204
+//	@Failure		404	{object}	error
+//	@Failure		500	{object}	error
+//	@Router			/user/activate/{token} [get]
 func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Request) {
 	token := chi.URLParam(r, "token")
 
