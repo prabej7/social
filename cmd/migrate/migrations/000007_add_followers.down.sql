@@ -1,1 +1,1 @@
-DELETE FROM followers;
+DROP TABLE IF EXISTS followers;
