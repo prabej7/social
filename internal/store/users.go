@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 type User struct {
@@ -18,13 +19,13 @@ type UserStorage struct {
 	db *sql.DB
 }
 
-func (s *UserStorage) Create(ctx context.Context, user *User) error {
+func (s *UserStorage) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
 	INSERT INTO users (username, email, password)
 	VALUES ($1, $2, $3) RETURNING id, created_at
 	`
 
-	err := s.db.QueryRowContext(ctx, query,
+	err := tx.QueryRowContext(ctx, query,
 		user.UserName,
 		user.Email,
 		user.Password,
@@ -60,5 +61,46 @@ func (s *UserStorage) GetById(ctx context.Context, id int64) (*User, error) {
 	}
 
 	return &user, nil
+
+}
+
+func (s *UserStorage) CreateAndInvite(
+	ctx context.Context,
+	user *User,
+	token string,
+	expiresAt time.Duration,
+) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		if err := s.Create(ctx, tx, user); err != nil {
+			return err
+		}
+
+		if err := s.createUserInvitation(ctx, tx, token, expiresAt, user.ID); err != nil {
+			return err
+		}
+
+		return nil
+	})
+}
+
+func (s *UserStorage) createUserInvitation(
+	ctx context.Context,
+	tx *sql.Tx,
+	token string,
+	exp time.Duration,
+	userID int64,
+) error {
+	query := `
+		INSERT INTO user_invitation (token, expires_at, user_id)
+		VALUES ($1, $2, $3)
+	`
+
+	_, err := tx.ExecContext(ctx, query, token, time.Now().Add(exp), userID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 
 }
