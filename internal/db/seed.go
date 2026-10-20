@@ -24,16 +24,27 @@ var usernames []string = []string{
 	"nepal_dev", "go_programmer", "code_master", "tech_lover", "debugger",
 }
 
-func Seed(storage *store.Storage) {
+func Seed(storage *store.Storage, db *sql.DB) {
 	ctx := context.Background()
 
 	numOfUsers := 50
 	users := generateUser(&numOfUsers)
 
 	createdUsers := make([]*store.User, 0, len(users))
-	tx := sql.Tx{}
+
+	tx, err := db.BeginTx(ctx, nil)
+
+	if err != nil {
+		log.Println("Error while initializing transaction:", err)
+		return
+	}
+
 	for _, user := range users {
-		if err := storage.Users.Create(ctx, &tx, user); err != nil {
+		if err := storage.Users.Create(ctx, tx, user); err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				log.Println("Rollback error on creating user:", err)
+			}
 			log.Println("Error creating user:", err)
 			return
 		}
