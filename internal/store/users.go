@@ -2,7 +2,9 @@ package store
 
 import (
 	"context"
+	"crypto/sha256"
 	"database/sql"
+	"encoding/hex"
 	"errors"
 	"time"
 )
@@ -12,6 +14,7 @@ type User struct {
 	UserName  string `json:"username,omitempty"`
 	Email     string `json:"email,omitempty"`
 	Password  string `json:"-"`
+	IsActive  bool   `json:"is_active"`
 	CreatedAt string `json:"createdAt,omitempty"`
 }
 
@@ -102,5 +105,92 @@ func (s *UserStorage) createUserInvitation(
 	}
 
 	return nil
+
+}
+
+func (s *UserStorage) getUserByToken(ctx context.Context, tx *sql.Tx, token string) (*User, error) {
+	query := `
+		SELECT u.id, u.username, u.email, u.created_at, u.is_active
+		FROM users u
+		JOIN user_invitation ui 
+		ON u.id = ui.user_id
+		WHERE ui.token = $1 AND ui.expires_at > NOW()
+	`
+
+	hash := sha256.Sum256([]byte(token))
+	hashToken := hex.EncodeToString(hash[:])
+
+	var user User
+	if err := tx.QueryRowContext(ctx, query, hashToken).
+		Scan(
+			&user.ID,
+			&user.UserName,
+			&user.Email,
+			&user.CreatedAt,
+			&user.IsActive,
+		); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, NotFoundError
+		}
+		return nil, err
+	}
+
+	return &user, nil
+}
+
+func (s *UserStorage) update(ctx context.Context, tx *sql.Tx, user *User) error {
+	query := `
+		UPDATE users
+		SET username =$1, email = $2, is_active = $3
+		WHERE id = $4
+	`
+
+	_, err := tx.ExecContext(ctx, query, user.UserName, user.Email, user.IsActive, user.ID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserStorage) deleteInvitation(ctx context.Context, tx *sql.Tx, userID int64) error {
+	query := `
+		DELETE FROM user_invitation
+		WHERE user_id = $1
+	`
+
+	_, err := tx.ExecContext(ctx, query, userID)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (s *UserStorage) Activate(ctx context.Context, token string) error {
+	return withTx(s.db, ctx, func(tx *sql.Tx) error {
+		user, err := s.getUserByToken(ctx, tx, token)
+
+		if err != nil {
+			return err
+		}
+
+		//update the user
+		user.IsActive = true
+		if err := s.update(ctx, tx, user); err != nil {
+			return err
+		}
+
+		//clean invitation
+		if err := s.deleteInvitation(ctx, tx, user.ID); err != nil {
+			return err
+		}
+
+		return nil
+
+	})
 
 }
