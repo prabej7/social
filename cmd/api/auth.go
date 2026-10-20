@@ -25,6 +25,11 @@ func HashPassword(text string) ([]byte, error) {
 	return hash, nil
 }
 
+type UserWithToken struct {
+	store.User
+	Token string `json:"token"`
+}
+
 // Regiser User godoc
 //
 //	@Summary		Register a new user
@@ -48,7 +53,7 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 
 	user := store.User{
 		UserName: userPayload.Username,
-		Email:    userPayload.Password,
+		Email:    userPayload.Email,
 		Password: string(hashedPassword),
 	}
 
@@ -68,7 +73,12 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	if err := app.jsonResponse(w, http.StatusCreated, user); err != nil {
+	userWithToken := UserWithToken{
+		User:  user,
+		Token: plainToken,
+	}
+
+	if err := app.jsonResponse(w, http.StatusCreated, userWithToken); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
