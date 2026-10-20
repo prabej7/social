@@ -25,6 +25,18 @@ func HashPassword(text string) ([]byte, error) {
 	return hash, nil
 }
 
+// Regiser User godoc
+//
+//	@Summary		Register a new user
+//	@Description	Creates a user account and sends an invitation email.
+//	@Tags			Authentication
+//	@Accept			json
+//	@Produce		json
+//	@Param			payload	body		RegisterUserPayload	true	"Registration details"
+//	@Success		201		{object}	store.User
+//	@Failure		400		{object}	map[string]string
+//	@Failure		500		{object}	map[string]string
+//	@Router			/auth/register [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
 	var userPayload = r.Context().Value(BodyKey).(RegisterUserPayload)
 

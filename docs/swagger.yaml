@@ -35,6 +35,23 @@ definitions:
       user_id:
         type: integer
     type: object
+  main.RegisterUserPayload:
+    properties:
+      email:
+        maxLength: 255
+        type: string
+      password:
+        maxLength: 75
+        minLength: 3
+        type: string
+      username:
+        maxLength: 100
+        type: string
+    required:
+    - email
+    - password
+    - username
+    type: object
   main.UpdatePostPayload:
     properties:
       content:
@@ -113,6 +130,40 @@ info:
   termsOfService: http://swagger.io/terms/
   title: LoferSocial API
 paths:
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Creates a user account and sends an invitation email.
+      parameters:
+      - description: Registration details
+        in: body
+        name: payload
+        required: true
+        schema:
+          $ref: '#/definitions/main.RegisterUserPayload'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/store.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Register a new user
+      tags:
+      - Authentication
   /comments:
     post:
       consumes:
