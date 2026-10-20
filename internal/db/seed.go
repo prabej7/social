@@ -52,13 +52,26 @@ func Seed(storage *store.Storage, db *sql.DB) {
 		createdUsers = append(createdUsers, user)
 	}
 
+	if err := tx.Commit(); err != nil {
+		log.Println("Error committing users:", err)
+		return
+	}
+
 	posts := generatePosts(createdUsers)
-	createdPosts := make([]*store.Post, len(users)*5)
+	createdPosts := make([]*store.Post, 0, len(posts))
 
 	for _, post := range posts {
 		if err := storage.Posts.Create(ctx, post); err != nil {
 			log.Println("Error while creating post:", err)
+			continue
 		}
+
+		// Only append posts that were successfully created.
+		if post.ID == 0 {
+			log.Println("Post created without a valid ID")
+			continue
+		}
+
 		createdPosts = append(createdPosts, post)
 	}
 
