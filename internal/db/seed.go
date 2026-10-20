@@ -2,6 +2,7 @@ package db
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"log"
 	"math/rand"
@@ -30,9 +31,9 @@ func Seed(storage *store.Storage) {
 	users := generateUser(&numOfUsers)
 
 	createdUsers := make([]*store.User, 0, len(users))
-
+	tx := sql.Tx{}
 	for _, user := range users {
-		if err := storage.Users.Create(ctx, user); err != nil {
+		if err := storage.Users.Create(ctx, &tx, user); err != nil {
 			log.Println("Error creating user:", err)
 			return
 		}
