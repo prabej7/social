@@ -21,6 +21,7 @@ type Users interface {
 		token string,
 		expiresAt time.Duration,
 	) error
+	Activate(ctx context.Context, token string) error
 }
 
 type Posts interface {
