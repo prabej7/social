@@ -38,5 +38,5 @@ func main() {
 	log.Println("database connection pool established")
 	storage := store.NewStorage(db)
 
-	idb.Seed(&storage)
+	idb.Seed(&storage, db)
 }
