@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"time"
 )
 
 var (
@@ -12,8 +13,14 @@ var (
 )
 
 type Users interface {
-	Create(ctx context.Context, user *User) error
+	Create(ctx context.Context, tx *sql.Tx, user *User) error
 	GetById(ctx context.Context, id int64) (*User, error)
+	CreateAndInvite(
+		ctx context.Context,
+		user *User,
+		token string,
+		expiresAt time.Duration,
+	) error
 }
 
 type Posts interface {
@@ -48,4 +55,21 @@ func NewStorage(db *sql.DB) Storage {
 		Comments:  &CommentStore{db},
 		Followers: &FollowersStore{db},
 	}
+}
+
+func withTx(db *sql.DB, ctx context.Context, fn func(*sql.Tx) error) error {
+	tx, err := db.BeginTx(ctx, nil)
+
+	if err != nil {
+		return err
+	}
+
+	if err := fn(tx); err != nil {
+		if err := tx.Rollback(); err != nil {
+			return err
+		}
+		return err
+	}
+
+	return tx.Commit()
 }
