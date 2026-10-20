@@ -9,6 +9,7 @@ import (
 
 	db "github.com/prabej7/social/internal/db/seed"
 	"github.com/prabej7/social/internal/store"
+	"golang.org/x/crypto/bcrypt"
 )
 
 var usernames []string = []string{
@@ -73,16 +74,30 @@ func Seed(storage *store.Storage, db *sql.DB) {
 
 }
 
+func HashPassword(text string) ([]byte, error) {
+	hash, err := bcrypt.GenerateFromPassword([]byte(text), bcrypt.DefaultCost)
+	if err != nil {
+		return nil, err
+	}
+
+	return hash, nil
+}
+
 func generateUser(num *int) []*store.User {
 	*num = min(*num, len(usernames))
 
 	users := make([]*store.User, 0, *num)
 
 	for i := range *num {
+		hashedPassword, err := HashPassword("Password@123")
+		if err != nil {
+			log.Println("Error while hashing password:", err)
+			panic(err)
+		}
 		users = append(users, &store.User{
 			UserName: usernames[i],
 			Email:    fmt.Sprintf("%s@social.com", usernames[i]),
-			Password: "Password@123",
+			Password: string(hashedPassword),
 		})
 	}
 
