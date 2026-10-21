@@ -7,6 +7,7 @@ import (
 	"github.com/go-playground/validator/v10"
 	"github.com/prabej7/social/internal/db"
 	"github.com/prabej7/social/internal/env"
+	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
 	"go.uber.org/zap"
 )
@@ -52,8 +53,13 @@ func main() {
 		},
 		env: env.GetString("ENV", "development"),
 		mail: mailConfig{
-			exp: time.Hour * 24 * 3, // 3days
+			exp:       time.Hour * 24 * 3, // 3days
+			fromEmail: env.GetString("FROM_EMAIL", ""),
+			sendGridConfig: sendGridConfig{
+				apiKey: env.GetString("SENDGRID_API_KEY", ""),
+			},
 		},
+		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
 	}
 
 	//logger
@@ -74,6 +80,7 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
+	mailer := mailer.NewSendGrid(cfg.mail.sendGridConfig.apiKey, cfg.mail.fromEmail)
 	store := store.NewStorage(db)
 
 	app := &application{
@@ -81,6 +88,7 @@ func main() {
 		store:   store,
 		timeout: time.Second * 5,
 		logger:  logger,
+		mailer:  mailer,
 	}
 
 	logger.Infof("server is running at: http://localhost%s", app.config.addr)
