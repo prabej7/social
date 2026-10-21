@@ -194,3 +194,24 @@ func (s *UserStorage) Activate(ctx context.Context, token string) error {
 	})
 
 }
+
+func (s *UserStorage) Delete(ctx context.Context, userID int64) error {
+	query := `
+		DELETE 
+		FROM users
+		WHERE id = $1
+	`
+
+	_, err := s.db.ExecContext(ctx, query, userID)
+
+	if err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return NotFoundError
+		default:
+			return err
+		}
+	}
+
+	return nil
+}
