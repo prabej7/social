@@ -15,6 +15,7 @@ var (
 type Users interface {
 	Create(ctx context.Context, tx *sql.Tx, user *User) error
 	GetById(ctx context.Context, id int64) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
 	CreateAndInvite(
 		ctx context.Context,
 		user *User,
