@@ -15,6 +15,8 @@ require (
 	golang.org/x/crypto v0.58.0
 )
 
+require github.com/sendgrid/rest v2.6.9+incompatible // indirect
+
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
 	github.com/gabriel-vasile/mimetype v1.4.15 // indirect
@@ -32,6 +34,7 @@ require (
 	github.com/go-playground/universal-translator v0.18.1 // indirect
 	github.com/google/uuid v1.6.0
 	github.com/leodido/go-urn v1.5.0 // indirect
+	github.com/sendgrid/sendgrid-go v3.16.1+incompatible
 	github.com/swaggo/files v1.0.1 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
