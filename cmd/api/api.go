@@ -6,6 +6,7 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
+	"github.com/prabej7/social/internal/auth"
 	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
 
@@ -16,11 +17,12 @@ import (
 )
 
 type application struct {
-	config  config
-	store   store.Storage
-	timeout time.Duration
-	logger  *zap.SugaredLogger
-	mailer  mailer.Client
+	config        config
+	store         store.Storage
+	timeout       time.Duration
+	logger        *zap.SugaredLogger
+	mailer        mailer.Client
+	authenticator auth.Autheticator
 }
 
 type dbConfig struct {
@@ -47,6 +49,13 @@ type mailConfig struct {
 
 type authConfig struct {
 	basic basicConfig
+	tokenConfig
+}
+
+type tokenConfig struct {
+	secret string
+	exp    time.Duration
+	iss   string
 }
 
 type basicConfig struct {
@@ -117,6 +126,7 @@ func (app *application) mount() http.Handler {
 
 		r.Route("/authentication", func(r chi.Router) {
 			r.Post("/user", validatePayload[RegisterUserPayload](app.registerUserHandler))
+			r.Post("/token", validatePayload[CreateTokenPayload](app.createTokenHandler))
 		})
 	})
 
