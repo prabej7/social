@@ -1,0 +1,9 @@
+{{define "subject"}} Finish Registration with Lopher Social{{end}}
+
+{{define "body"}}
+  <p>Hello {{.UserName}},</p>
+  <p>Welcome to Lopher Social! Please click the link below to finish your registration:</p>
+  <p><a href="{{.ActivationURL}}">Finish Registration</a></p>
+  <p>If you did not request this invitation, please ignore this email.</p>
+  <p>Thank you,<br>Lopher Social Team</p>
+{{end}}
