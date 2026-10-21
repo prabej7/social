@@ -3,9 +3,11 @@ package main
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"fmt"
 	"net/http"
 
 	"github.com/google/uuid"
+	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -61,14 +63,44 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 	hash := sha256.Sum256([]byte(plainToken))
 	hashToken := hex.EncodeToString(hash[:])
 
+	ctx := r.Context()
 	err = app.store.Users.CreateAndInvite(
-		r.Context(),
+		ctx,
 		&user,
 		hashToken,
 		app.config.mail.exp,
 	)
 
 	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	activationURL := fmt.Sprintf("%s/confirm/%s", app.config.frontendURL, plainToken)
+
+	vars := struct {
+		UserName      string
+		ActivationURL string
+	}{
+		UserName:      user.UserName,
+		ActivationURL: activationURL,
+	}
+
+	isProdEnv := app.config.env == "production"
+
+	if err = app.mailer.Send(
+		mailer.UserWelcomeTemplate,
+		user.UserName,
+		user.Email,
+		vars,
+		!isProdEnv,
+	); err != nil {
+		app.logger.Errorw("error sending welcome email", "error", err)
+
+		if err := app.store.Users.Delete(ctx, user.ID); err != nil {
+			app.logger.Errorw("error deleting user", "error", err)
+		}
+
 		app.internalServerError(w, r, err)
 		return
 	}
