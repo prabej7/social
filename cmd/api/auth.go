@@ -5,7 +5,9 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"time"
 
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
@@ -114,4 +116,54 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		app.internalServerError(w, r, err)
 		return
 	}
+}
+
+type CreateTokenPayload struct {
+	Email    string `json:"email" validate:"required,email,max=255"`
+	Password string `json:"password" validate:"required,min=3,max=72"`
+}
+
+func (app *application) createTokenHandler(w http.ResponseWriter, r *http.Request) {
+	ctx := r.Context()
+	payload := ctx.Value(BodyKey).(CreateTokenPayload)
+
+	user, err := app.store.Users.GetByEmail(ctx, payload.Email)
+
+	if err != nil {
+		switch err {
+		case store.NotFoundError:
+			app.unAuthorizedBasicError(w, r, fmt.Errorf("invalid credentials"))
+		default:
+			app.internalServerError(w, r, err)
+		}
+		return
+	}
+
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(payload.Password)); err != nil {
+		app.unAuthorizedError(w, r, fmt.Errorf("invalid credentials"))
+		return
+	}
+
+	claims := jwt.MapClaims{
+		"sub": user.ID,
+		"exp": time.Now().Add(app.config.auth.exp),
+		"iat": time.Now().Unix(),
+		"nbf": time.Now().Unix(),
+		"iss": app.config.auth.iss,
+		"aud": app.config.auth.iss,
+	}
+	token, err := app.authenticator.GenerateToken(claims)
+
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	if err := app.jsonResponse(w, http.StatusOK, map[string]any{
+		"token": token,
+	}); err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
 }
