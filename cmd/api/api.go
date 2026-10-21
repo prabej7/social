@@ -92,7 +92,7 @@ func (app *application) mount() http.Handler {
 		})
 
 		r.Route("/user", func(r chi.Router) {
-			r.Put("/activate/{token}", app.activateUserHandler)
+			r.Get("/activate/{token}", app.activateUserHandler)
 			r.Route("/{id}", func(r chi.Router) {
 				r.Use(app.userContextMiddleware)
 				r.Get("/", app.getUserHandler)
