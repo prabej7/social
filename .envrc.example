@@ -11,3 +11,6 @@ export FRONTEND_URL=http://localhost:5173
 export FROM_EMAIL=username@gmail.com
 export SENDGRID_API_KEY=<your_api_key>
 export SMTP_APP_PASSWORD=<your_password>
+export BASIC_AUTH_USERNAME=admin
+export BASIC_AUTH_PASSWORD=admin
+JWT_SECRET=<your_secret>
