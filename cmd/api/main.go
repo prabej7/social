@@ -58,6 +58,9 @@ func main() {
 			sendGridConfig: sendGridConfig{
 				apiKey: env.GetString("SENDGRID_API_KEY", ""),
 			},
+			smtpConfig: smtpConfig{
+				password: env.GetString("SMTP_APP_PASSWORD", ""),
+			},
 		},
 		frontendURL: env.GetString("FRONTEND_URL", "http://localhost:5173"),
 	}
@@ -80,7 +83,8 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
-	mailer := mailer.NewSendGrid(cfg.mail.sendGridConfig.apiKey, cfg.mail.fromEmail)
+	mailer := mailer.NewSMTPMailer(cfg.mail.fromEmail, cfg.mail.smtpConfig.password)
+	// mailer := mailer.NewSendGrid(cfg.mail.sendGridConfig.apiKey, cfg.mail.fromEmail)
 	store := store.NewStorage(db)
 
 	app := &application{
