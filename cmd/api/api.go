@@ -34,10 +34,15 @@ type sendGridConfig struct {
 	apiKey string
 }
 
+type smtpConfig struct {
+	password string
+}
+
 type mailConfig struct {
 	exp            time.Duration
 	fromEmail      string
 	sendGridConfig sendGridConfig
+	smtpConfig     smtpConfig
 }
 
 type config struct {
