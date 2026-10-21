@@ -204,8 +204,5 @@ func (app *application) activateUserHandler(w http.ResponseWriter, r *http.Reque
 		}
 	}
 
-	if err := app.jsonResponse(w, http.StatusNoContent, nil); err != nil {
-		app.internalServerError(w, r, err)
-		return
-	}
+	http.Redirect(w, r, "/", http.StatusAccepted)
 }
