@@ -22,6 +22,7 @@ type Users interface {
 		expiresAt time.Duration,
 	) error
 	Activate(ctx context.Context, token string) error
+	Delete(ctx context.Context, userID int64) error
 }
 
 type Posts interface {
