@@ -6,3 +6,7 @@ export DB_ADDR="postgres://username:password@localhost:5433/social?sslmode=disab
 export POSTGRES_USER=username
 export POSTGRES_PASSWORD=password
 export POSTGRES_DB=social
+export ENV=production
+export FRONTEND_URL=http://localhost:5173
+export FROM_EMAIL=username@gmail.com
+export SENDGRID_API_KEY=<your_api_key>
