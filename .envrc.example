@@ -10,3 +10,4 @@ export ENV=production
 export FRONTEND_URL=http://localhost:5173
 export FROM_EMAIL=username@gmail.com
 export SENDGRID_API_KEY=<your_api_key>
+export SMTP_APP_PASSWORD=<your_password>
