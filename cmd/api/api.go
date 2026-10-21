@@ -45,6 +45,15 @@ type mailConfig struct {
 	smtpConfig     smtpConfig
 }
 
+type authConfig struct {
+	basic basicConfig
+}
+
+type basicConfig struct {
+	username string
+	password string
+}
+
 type config struct {
 	addr        string
 	db          dbConfig
@@ -52,6 +61,7 @@ type config struct {
 	apiUrl      string
 	mail        mailConfig
 	frontendURL string
+	auth        authConfig
 }
 
 func (app *application) mount() http.Handler {
@@ -71,7 +81,7 @@ func (app *application) mount() http.Handler {
 	})
 
 	r.Route("/api/v1", func(r chi.Router) {
-		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware).Get("/health", app.healthCheckHandler)
 
 		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
