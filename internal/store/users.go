@@ -215,3 +215,30 @@ func (s *UserStorage) Delete(ctx context.Context, userID int64) error {
 
 	return nil
 }
+
+func (s *UserStorage) GetByEmail(ctx context.Context, email string) (*User, error) {
+	query := `
+		SELECT id, username, email, password, created_at
+		FROM users
+		WHERE email = $1 AND is_active = true
+	`
+
+	var user User
+	if err := s.db.QueryRowContext(ctx, query, email).
+		Scan(
+			&user.ID,
+			&user.UserName,
+			&user.Email,
+			&user.Password,
+			&user.CreatedAt,
+		); err != nil {
+		switch {
+		case errors.Is(err, sql.ErrNoRows):
+			return nil, NotFoundError
+		default:
+			return nil, err
+		}
+	}
+
+	return &user, nil
+}
