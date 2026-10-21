@@ -54,11 +54,19 @@ func (m *SMTPMailer) Send(templateFile, username, email string, data any, isSand
 			body.String() + "\r\n",
 	)
 
-	return smtp.SendMail(
-		"smtp.gmail.com:587",
-		auth,
-		from,
-		[]string{email},
-		message,
-	)
+	for range MaxRetries {
+		err = smtp.SendMail(
+			"smtp.gmail.com:587",
+			auth,
+			from,
+			[]string{email},
+			message,
+		)
+
+		if err == nil {
+			break
+		}
+	}
+
+	return err
 }
