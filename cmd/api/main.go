@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-playground/validator/v10"
+	"github.com/prabej7/social/internal/auth"
 	"github.com/prabej7/social/internal/db"
 	"github.com/prabej7/social/internal/env"
 	"github.com/prabej7/social/internal/mailer"
@@ -68,6 +69,11 @@ func main() {
 				username: env.GetString("BASIC_AUTH_USERNAME", "admin"),
 				password: env.GetString("BASIC_AUTH_PASSWORD", "admin"),
 			},
+			tokenConfig{
+				secret: env.GetString("AUTH_TOKEN_SECRET", ""),
+				exp:    time.Hour * 24 * 3, // 3 days
+				iss:   "lophersocial",
+			},
 		},
 	}
 
@@ -93,12 +99,16 @@ func main() {
 	// mailer := mailer.NewSendGrid(cfg.mail.sendGridConfig.apiKey, cfg.mail.fromEmail)
 	store := store.NewStorage(db)
 
+	jwtHost := cfg.auth.iss
+	jwtAuthenticator := auth.NewJWTAuthenticator(cfg.auth.secret, jwtHost, jwtHost)
+
 	app := &application{
-		config:  cfg,
-		store:   store,
-		timeout: time.Second * 5,
-		logger:  logger,
-		mailer:  mailer,
+		config:        cfg,
+		store:         store,
+		timeout:       time.Second * 5,
+		logger:        logger,
+		mailer:        mailer,
+		authenticator: jwtAuthenticator,
 	}
 
 	logger.Infof("server is running at: http://localhost%s", app.config.addr)
