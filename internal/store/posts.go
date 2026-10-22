@@ -157,11 +157,23 @@ func (s *PostStorage) GetUserFeed(ctx context.Context, userID int64, fq Paginate
 		LEFT JOIN users u ON u.id = p.user_id
 		WHERE
 			(f.user_id = $1 OR p.user_id = $1)
-			AND ($4 = '' OR p.title ILIKE '%' || $4 || '%'
-				OR p.content ILIKE '%' || $4 || '%')
-			AND (p.tags @> $5 OR $5 = '{}')
-			AND ($6::timestamptz IS NULL OR p.created_at >= $6)
-			AND ($7::timestamptz IS NULL OR p.created_at <= $7)
+			AND (
+				COALESCE($4, '') = ''
+				OR p.title ILIKE '%' || $4 || '%'
+				OR p.content ILIKE '%' || $4 || '%'
+			)
+			AND (
+				COALESCE(array_length($5::varchar[], 1), 0) = 0
+				OR p.tags @> $5::varchar[]
+			)
+			AND (
+				$6::timestamptz IS NULL
+				OR p.created_at >= $6
+			)
+			AND (
+				$7::timestamptz IS NULL
+				OR p.created_at <= $7
+			)
 		GROUP BY p.id, u.id
 		ORDER BY p.created_at ` + fq.Sort + `
 		LIMIT $2 OFFSET $3
@@ -189,6 +201,7 @@ func (s *PostStorage) GetUserFeed(ctx context.Context, userID int64, fq Paginate
 	defer rows.Close()
 
 	var posts []*PostWithMetaData
+
 	for rows.Next() {
 		var post PostWithMetaData
 		if err := rows.Scan(
