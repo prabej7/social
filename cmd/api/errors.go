@@ -51,11 +51,20 @@ func (app *application) unAuthorizedError(w http.ResponseWriter, r *http.Request
 
 func (app *application) unAuthorizedBasicError(w http.ResponseWriter, r *http.Request, err error) {
 	app.logger.Errorw("unauthorized", "method", r.Method, "path", r.URL.Path, "error", err.Error())
-	
+
 	w.Header().Set("WWW-Authenticate", `Basic realm="restricted", charset="UTF-8`)
 
 	writeJson(w, http.StatusUnauthorized, ErrorResponse{
 		Success: false,
 		Message: "unauthorized",
+	})
+}
+
+func (app *application) forbiddenError(w http.ResponseWriter, r *http.Request, err error) {
+	app.logger.Warnw("forbidden error", "method", r.Method, "path", r.URL.Path, "error", err.Error())
+
+	writeJson(w, http.StatusForbidden, ErrorResponse{
+		Success: false,
+		Message: err.Error(),
 	})
 }
