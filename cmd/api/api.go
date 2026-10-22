@@ -9,6 +9,7 @@ import (
 	"github.com/prabej7/social/internal/auth"
 	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
+	"github.com/prabej7/social/internal/store/cache"
 
 	"go.uber.org/zap"
 
@@ -23,6 +24,7 @@ type application struct {
 	logger        *zap.SugaredLogger
 	mailer        mailer.Client
 	authenticator auth.Autheticator
+	cache         cache.Storage
 }
 
 type dbConfig struct {
@@ -63,6 +65,13 @@ type basicConfig struct {
 	password string
 }
 
+type redisConfig struct {
+	addr     string
+	password string
+	db       int
+	enabled  bool
+}
+
 type config struct {
 	addr        string
 	db          dbConfig
@@ -71,6 +80,7 @@ type config struct {
 	mail        mailConfig
 	frontendURL string
 	auth        authConfig
+	redisConfig redisConfig
 }
 
 func (app *application) mount() http.Handler {
@@ -80,7 +90,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
 
-	r.Use(middleware.Timeout(60 * time.Second))
+	// r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(Timeout(app.timeout))
 
 	r.Get("/", func(w http.ResponseWriter, r *http.Request) {
@@ -120,9 +130,9 @@ func (app *application) mount() http.Handler {
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/activate/{token}", app.activateUserHandler)
 
+			r.With(app.AuthTokenMiddleware).Get("/", app.getUserHandler)
 			r.With(app.AuthTokenMiddleware).Route("/{id}", func(r chi.Router) {
 				r.Use(app.userContextMiddleware)
-				r.Get("/", app.getUserHandler)
 				r.Put("/follow", app.followUserHandler)
 				r.Put("/unfollow", app.unFollowUserHandler)
 			})
