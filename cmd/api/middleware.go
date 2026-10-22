@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prabej7/social/internal/store"
 )
 
 func (app *application) BasicAuthMiddleware(next http.Handler) http.Handler {
@@ -58,7 +59,7 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		// read the authorization header
 		authHeader := r.Header.Get("Authorization")
-		fmt.Printf("AUTH HEADER = %q\n", authHeader)
+
 		// validate the header
 		if authHeader == "" {
 			app.unAuthorizedBasicError(w, r, fmt.Errorf("authorization header is missing"))
@@ -104,4 +105,38 @@ func (app *application) AuthTokenMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 
+}
+
+func (app *application) checkPostOwnership(role string, next http.HandlerFunc) http.HandlerFunc {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user := app.getUserFromContext(r, userContextKey)
+		post := getPostContext(r)
+
+		if post.UserID == user.ID {
+			next.ServeHTTP(w, r)
+			return
+		}
+
+		allowed, err := app.checkRolePrecedence(r.Context(), user, role)
+		if err != nil {
+			app.internalServerError(w, r, err)
+		}
+
+		if !allowed {
+			app.forbiddenError(w, r, fmt.Errorf("forbidden"))
+			return
+		}
+
+		next.ServeHTTP(w, r)
+
+	})
+}
+
+func (app *application) checkRolePrecedence(ctx context.Context, user *store.User, roleName string) (bool, error) {
+	role, err := app.store.Roles.GetByName(ctx, roleName)
+	if err != nil {
+		return false, err
+	}
+
+	return user.Role.Level >= role.Level, nil
 }
