@@ -16,7 +16,12 @@ require (
 	golang.org/x/crypto v0.58.0
 )
 
-require github.com/sendgrid/rest v2.6.9+incompatible // indirect
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/redis/go-redis/v9 v9.23.0 // indirect
+	github.com/sendgrid/rest v2.6.9+incompatible // indirect
+	go.uber.org/atomic v1.12.0 // indirect
+)
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
