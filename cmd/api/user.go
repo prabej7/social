@@ -11,7 +11,10 @@ import (
 	"github.com/prabej7/social/internal/store"
 )
 
-var userContextKey contextKey = "user"
+var (
+	userContextKey      contextKey = "user"
+	paramUserContextKey contextKey = "paramUser"
+)
 
 // GetUser godoc
 //
@@ -26,7 +29,7 @@ var userContextKey contextKey = "user"
 //	@Faiure			500 {object} error
 //	@Router			/user/{id} [get]
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := app.getUserFromContext(r)
+	user := app.getUserFromContext(r, BodyKey)
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
 		app.internalServerError(w, r, err)
@@ -57,14 +60,14 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), userContextKey, user)
+		ctx := context.WithValue(r.Context(), paramUserContextKey, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
 
-func (app *application) getUserFromContext(r *http.Request) *store.User {
-	user := r.Context().Value(userContextKey).(*store.User)
+func (app *application) getUserFromContext(r *http.Request, key contextKey) *store.User {
+	user := r.Context().Value(key).(*store.User)
 
 	return user
 }
@@ -86,12 +89,11 @@ type FollowUser struct {
 //	@Failure		500	{object}	error
 //	@Router			/user/follow [post]
 func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request) {
-	followerUser := app.getUserFromContext(r)
+	followerUser := app.getUserFromContext(r, paramUserContextKey)
 
-	// TODO: Revert back to auth User
-	payload := r.Context().Value(BodyKey).(FollowUser)
+	user := app.getUserFromContext(r, userContextKey)
 
-	if err := app.store.Followers.Follow(r.Context(), followerUser.ID, payload.UserID); err != nil {
+	if err := app.store.Followers.Follow(r.Context(), followerUser.ID, user.ID); err != nil {
 		switch err {
 		case store.ConflictError:
 			app.conflictError(w, r, err)
@@ -121,11 +123,10 @@ func (app *application) followUserHandler(w http.ResponseWriter, r *http.Request
 //	@Failure		500	{object}	error
 //	@Router			/user/unfollow [post]
 func (app *application) unFollowUserHandler(w http.ResponseWriter, r *http.Request) {
-	unFollowedUser := app.getUserFromContext(r)
-	// TODO: Revert back to auth User
-	payload := r.Context().Value(BodyKey).(FollowUser)
+	unFollowedUser := app.getUserFromContext(r, paramUserContextKey)
+	user := app.getUserFromContext(r, userContextKey)
 
-	if err := app.store.Followers.UnFollow(r.Context(), unFollowedUser.ID, payload.UserID); err != nil {
+	if err := app.store.Followers.UnFollow(r.Context(), unFollowedUser.ID, user.ID); err != nil {
 		app.internalServerError(w, r, err)
 		return
 	}
@@ -168,8 +169,8 @@ func (app *application) getUserFeedHandler(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	userID := 1 // revert to auth userID
-	feed, err := app.store.Posts.GetUserFeed(r.Context(), int64(userID), fq)
+	user := app.getUserFromContext(r, userContextKey)
+	feed, err := app.store.Posts.GetUserFeed(r.Context(), int64(user.ID), fq)
 
 	if err != nil {
 		app.internalServerError(w, r, err)

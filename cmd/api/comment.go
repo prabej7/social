@@ -8,7 +8,6 @@ import (
 
 type CreateCommentPayload struct {
 	Content string `json:"content" validate:"required,max=100"`
-	UserId  int64  `json:"user_id" validate:"required"`
 	PostId  int64  `json:"post_id" validate:"required"`
 }
 
@@ -37,9 +36,11 @@ func (app *application) createCommentHandler(w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	user := app.getUserFromContext(r, userContextKey)
+
 	var comment store.Comment = store.Comment{
 		PostID:  post.ID,
-		UserID:  commentPayload.UserId,
+		UserID:  user.ID,
 		Content: commentPayload.Content,
 	}
 

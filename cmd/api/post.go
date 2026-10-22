@@ -32,15 +32,16 @@ type CreatePostPayload struct {
 //	@Failure		500		{object}	map[string]string
 //	@Router			/posts [post]
 func (app *application) createPostHandler(w http.ResponseWriter, r *http.Request) {
-	var payload CreatePostPayload = r.Context().Value(BodyKey).(CreatePostPayload)
+	ctx := r.Context()
+	var payload CreatePostPayload = ctx.Value(BodyKey).(CreatePostPayload)
 
-	userId := 1
+	user := app.getUserFromContext(r, userContextKey)
 
 	post := &store.Post{
 		Title:   payload.Title,
 		Content: payload.Content,
 		Tags:    payload.Tags,
-		UserID:  int64(userId),
+		UserID:  int64(user.ID),
 	}
 
 	if err := app.store.Posts.Create(r.Context(), post); err != nil {
@@ -205,3 +206,4 @@ func getPostContext(r *http.Request) *store.Post {
 	post := r.Context().Value(postContextKey).(*store.Post)
 	return post
 }
+
