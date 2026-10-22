@@ -111,6 +111,7 @@ func generateUser(num *int) []*store.User {
 			UserName: usernames[i],
 			Email:    fmt.Sprintf("%s@social.com", usernames[i]),
 			Password: string(hashedPassword),
+			RoleID:   1,
 		})
 	}
 
