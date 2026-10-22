@@ -29,7 +29,7 @@ var (
 //	@Faiure			500 {object} error
 //	@Router			/user/{id} [get]
 func (app *application) getUserHandler(w http.ResponseWriter, r *http.Request) {
-	user := app.getUserFromContext(r, BodyKey)
+	user := app.getUserFromContext(r, userContextKey)
 
 	if err := app.jsonResponse(w, http.StatusOK, user); err != nil {
 		app.internalServerError(w, r, err)
