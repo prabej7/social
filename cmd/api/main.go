@@ -10,6 +10,8 @@ import (
 	"github.com/prabej7/social/internal/env"
 	"github.com/prabej7/social/internal/mailer"
 	"github.com/prabej7/social/internal/store"
+	"github.com/prabej7/social/internal/store/cache"
+	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"
 )
 
@@ -72,8 +74,14 @@ func main() {
 			tokenConfig{
 				secret: env.GetString("AUTH_TOKEN_SECRET", ""),
 				exp:    time.Hour * 24 * 3, // 3 days
-				iss:   "lophersocial",
+				iss:    "lophersocial",
 			},
+		},
+		redisConfig: redisConfig{
+			addr:     env.GetString("REDIS_HOST", "localhost:6380"),
+			password: env.GetString("REDIS_PASSWORD", ""),
+			db:       env.GetInt("REDIS_DB", 0),
+			enabled:  env.GetBool("REDIS_ENABLED", false),
 		},
 	}
 
@@ -95,16 +103,36 @@ func main() {
 	defer db.Close()
 	logger.Info("database connection pool established")
 
-	mailer := mailer.NewSMTPMailer(cfg.mail.fromEmail, cfg.mail.smtpConfig.password)
+	mailer := mailer.NewSMTPMailer(
+		cfg.mail.fromEmail,
+		cfg.mail.smtpConfig.password,
+	)
 	// mailer := mailer.NewSendGrid(cfg.mail.sendGridConfig.apiKey, cfg.mail.fromEmail)
 	store := store.NewStorage(db)
 
 	jwtHost := cfg.auth.iss
-	jwtAuthenticator := auth.NewJWTAuthenticator(cfg.auth.secret, jwtHost, jwtHost)
+	jwtAuthenticator := auth.NewJWTAuthenticator(
+		cfg.auth.secret,
+		jwtHost,
+		jwtHost,
+	)
+
+	var rdb *redis.Client
+	if cfg.redisConfig.enabled {
+		rdb = cache.NewRedisClient(
+			cfg.redisConfig.addr,
+			cfg.redisConfig.password,
+			cfg.redisConfig.db,
+		)
+		logger.Info("redis client initialized")
+	}
+
+	cacheStorage := cache.NewRedisStorage(rdb)
 
 	app := &application{
 		config:        cfg,
 		store:         store,
+		cache:         cacheStorage,
 		timeout:       time.Second * 5,
 		logger:        logger,
 		mailer:        mailer,
