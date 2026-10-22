@@ -16,6 +16,8 @@ type User struct {
 	Password  string `json:"-"`
 	IsActive  bool   `json:"is_active"`
 	CreatedAt string `json:"createdAt,omitempty"`
+	RoleID    int64  `json:"role_id"`
+	Role      Role   `json:"role"`
 }
 
 type UserStorage struct {
@@ -24,14 +26,15 @@ type UserStorage struct {
 
 func (s *UserStorage) Create(ctx context.Context, tx *sql.Tx, user *User) error {
 	query := `
-	INSERT INTO users (username, email, password)
-	VALUES ($1, $2, $3) RETURNING id, created_at
+	INSERT INTO users (username, email, password, role_id)
+	VALUES ($1, $2, $3, $4) RETURNING id, created_at
 	`
 
 	err := tx.QueryRowContext(ctx, query,
 		user.UserName,
 		user.Email,
 		user.Password,
+		user.RoleID,
 	).Scan(&user.ID, &user.CreatedAt)
 
 	if err != nil {
@@ -43,9 +46,10 @@ func (s *UserStorage) Create(ctx context.Context, tx *sql.Tx, user *User) error 
 
 func (s *UserStorage) GetById(ctx context.Context, id int64) (*User, error) {
 	query := `
-		SELECT id, username, email
-		FROM users
-		WHERE id = $1
+		SELECT u.id, u.username, u.email, u.is_active, u.created_at, r.id, r.name, r.level
+		FROM users u
+		JOIN roles r ON u.role_id = r.id
+		WHERE u.id = $1
 	`
 
 	var user User
@@ -54,6 +58,11 @@ func (s *UserStorage) GetById(ctx context.Context, id int64) (*User, error) {
 			&user.ID,
 			&user.UserName,
 			&user.Email,
+			&user.IsActive,
+			&user.CreatedAt,
+			&user.Role.ID,
+			&user.Role.Name,
+			&user.Role.Level,
 		); err != nil {
 		switch {
 		case errors.Is(sql.ErrNoRows, err):
