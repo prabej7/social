@@ -8,6 +8,7 @@ require github.com/joho/godotenv v1.5.1
 
 require (
 	github.com/go-playground/validator/v10 v10.30.5
+	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/lib/pq v1.12.3
 	github.com/swaggo/http-swagger v1.3.4
 	github.com/swaggo/swag v1.16.6
@@ -15,10 +16,7 @@ require (
 	golang.org/x/crypto v0.58.0
 )
 
-require (
-	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
-	github.com/sendgrid/rest v2.6.9+incompatible // indirect
-)
+require github.com/sendgrid/rest v2.6.9+incompatible // indirect
 
 require (
 	github.com/KyleBanks/depth v1.2.1 // indirect
