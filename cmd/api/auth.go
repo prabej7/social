@@ -47,9 +47,17 @@ type UserWithToken struct {
 //	@Failure		500		{object}	map[string]string
 //	@Router			/auth/register [post]
 func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Request) {
-	var userPayload = r.Context().Value(BodyKey).(RegisterUserPayload)
+	ctx := r.Context()
+	var userPayload = ctx.Value(BodyKey).(RegisterUserPayload)
 
 	hashedPassword, err := HashPassword(userPayload.Password)
+	if err != nil {
+		app.internalServerError(w, r, err)
+		return
+	}
+
+	role, err := app.store.Roles.GetByName(ctx, "user")
+
 	if err != nil {
 		app.internalServerError(w, r, err)
 		return
@@ -59,13 +67,13 @@ func (app *application) registerUserHandler(w http.ResponseWriter, r *http.Reque
 		UserName: userPayload.Username,
 		Email:    userPayload.Email,
 		Password: string(hashedPassword),
+		RoleID:   role.ID,
 	}
 
 	plainToken := uuid.New().String()
 	hash := sha256.Sum256([]byte(plainToken))
 	hashToken := hex.EncodeToString(hash[:])
 
-	ctx := r.Context()
 	err = app.store.Users.CreateAndInvite(
 		ctx,
 		&user,
