@@ -26,6 +26,11 @@ type Users interface {
 	Delete(ctx context.Context, userID int64) error
 }
 
+type Roles interface {
+	GetByName(ctx context.Context, name string) (*Role, error)
+	GetByID(ctx context.Context, id int64) (*Role, error)
+}
+
 type Posts interface {
 	Create(ctx context.Context, posts *Post) error
 	GetById(ctx context.Context, id int64) (*Post, error)
@@ -49,6 +54,7 @@ type Storage struct {
 	Posts
 	Comments
 	Followers
+	Roles
 }
 
 func NewStorage(db *sql.DB) Storage {
@@ -57,6 +63,7 @@ func NewStorage(db *sql.DB) Storage {
 		Users:     &UserStorage{db},
 		Comments:  &CommentStore{db},
 		Followers: &FollowersStore{db},
+		Roles:     &RoleStore{db},
 	}
 }
 
