@@ -55,7 +55,7 @@ type authConfig struct {
 type tokenConfig struct {
 	secret string
 	exp    time.Duration
-	iss   string
+	iss    string
 }
 
 type basicConfig struct {
@@ -95,32 +95,41 @@ func (app *application) mount() http.Handler {
 		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))
 
-		r.Route("/post", func(r chi.Router) {
-			r.Post("/", validatePayload[CreatePostPayload](app.createPostHandler))
+		r.Group(func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+			r.Route("/post", func(r chi.Router) {
+				r.Post("/", validatePayload[CreatePostPayload](app.createPostHandler))
 
-			r.Route("/{id}", func(r chi.Router) {
-				r.Use(app.postContextMiddleware)
-				r.Get("/", app.getPostByIdHandler)
-				r.Patch("/", validatePayload[UpdatePostPayload](app.update))
-				r.Delete("/", app.delete)
+				r.Route("/{id}", func(r chi.Router) {
+					r.Use(app.postContextMiddleware)
+					r.Get("/", app.getPostByIdHandler)
+					r.Patch("/", validatePayload[UpdatePostPayload](app.update))
+					r.Delete("/", app.delete)
+				})
 			})
+
 		})
 
-		r.Route("/comment", func(r chi.Router) {
-			r.Post("/", validatePayload[CreateCommentPayload](app.createCommentHandler))
+		r.Group(func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
+			r.Route("/comment", func(r chi.Router) {
+				r.Post("/", validatePayload[CreateCommentPayload](app.createCommentHandler))
+			})
 		})
 
 		r.Route("/user", func(r chi.Router) {
 			r.Get("/activate/{token}", app.activateUserHandler)
-			r.Route("/{id}", func(r chi.Router) {
+
+			r.With(app.AuthTokenMiddleware).Route("/{id}", func(r chi.Router) {
 				r.Use(app.userContextMiddleware)
 				r.Get("/", app.getUserHandler)
-				r.Put("/follow", validatePayload[FollowUser](app.followUserHandler))
-				r.Put("/unfollow", validatePayload[FollowUser](app.unFollowUserHandler))
+				r.Put("/follow", app.followUserHandler)
+				r.Put("/unfollow", app.unFollowUserHandler)
 			})
 		})
 
 		r.Group(func(r chi.Router) {
+			r.Use(app.AuthTokenMiddleware)
 			r.Get("/user/feed", app.getUserFeedHandler)
 		})
 
