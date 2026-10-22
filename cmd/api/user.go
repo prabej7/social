@@ -48,7 +48,8 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		user, err := app.store.Users.GetById(r.Context(), parsedId)
+		ctx := r.Context()
+		user, err := app.store.Users.GetById(ctx, parsedId)
 
 		if err != nil {
 			switch {
@@ -60,7 +61,7 @@ func (app *application) userContextMiddleware(next http.Handler) http.Handler {
 			return
 		}
 
-		ctx := context.WithValue(r.Context(), paramUserContextKey, user)
+		ctx = context.WithValue(r.Context(), paramUserContextKey, user)
 
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
