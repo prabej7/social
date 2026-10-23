@@ -13,6 +13,7 @@ import (
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/prabej7/social/internal/auth"
 	"github.com/prabej7/social/internal/mailer"
+	"github.com/prabej7/social/internal/ratelimiter"
 	"github.com/prabej7/social/internal/store"
 	"github.com/prabej7/social/internal/store/cache"
 
@@ -30,6 +31,7 @@ type application struct {
 	mailer        mailer.Client
 	authenticator auth.Autheticator
 	cache         cache.Storage
+	ratelimiter   ratelimiter.Limiter
 }
 
 type dbConfig struct {
@@ -86,6 +88,7 @@ type config struct {
 	frontendURL string
 	auth        authConfig
 	redisConfig redisConfig
+	rateLimiter ratelimiter.Config
 }
 
 func (app *application) mount() http.Handler {
@@ -94,6 +97,7 @@ func (app *application) mount() http.Handler {
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
+	r.Use(app.RateLimiterMiddleware)	
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(Timeout(app.timeout))

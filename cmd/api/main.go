@@ -9,6 +9,7 @@ import (
 	"github.com/prabej7/social/internal/db"
 	"github.com/prabej7/social/internal/env"
 	"github.com/prabej7/social/internal/mailer"
+	"github.com/prabej7/social/internal/ratelimiter"
 	"github.com/prabej7/social/internal/store"
 	"github.com/prabej7/social/internal/store/cache"
 	"github.com/redis/go-redis/v9"
@@ -83,6 +84,11 @@ func main() {
 			db:       env.GetInt("REDIS_DB", 0),
 			enabled:  env.GetBool("REDIS_ENABLED", false),
 		},
+		rateLimiter: ratelimiter.Config{
+			RequestPerTimeFrame: 10,
+			TimeFrame:           time.Minute,
+			Enable:              true,
+		},
 	}
 
 	//logger
@@ -129,6 +135,11 @@ func main() {
 
 	cacheStorage := cache.NewRedisStorage(rdb)
 
+	fixedWindowLimiter := ratelimiter.NewFixedWindowLimiter(
+		cfg.rateLimiter.RequestPerTimeFrame,
+		cfg.rateLimiter.TimeFrame,
+	)
+
 	app := &application{
 		config:        cfg,
 		store:         store,
@@ -137,6 +148,7 @@ func main() {
 		logger:        logger,
 		mailer:        mailer,
 		authenticator: jwtAuthenticator,
+		ratelimiter:   fixedWindowLimiter,
 	}
 
 	logger.Infof("server is running at: http://localhost%s", app.config.addr)
