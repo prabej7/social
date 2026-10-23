@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"expvar"
 	"net/http"
 	"os"
 	"os/signal"
@@ -19,6 +20,7 @@ import (
 
 	"go.uber.org/zap"
 
+	"github.com/go-chi/cors"
 	"github.com/prabej7/social/docs"
 	httpSwagger "github.com/swaggo/http-swagger"
 )
@@ -93,11 +95,23 @@ type config struct {
 
 func (app *application) mount() http.Handler {
 	r := chi.NewRouter()
+
+	r.Use(cors.Handler(cors.Options{
+		AllowedOrigins: []string{app.config.frontendURL}, // Use this to allow specific origin hosts
+		// AllowedOrigins: []string{"https://*", "http://*"},
+		// AllowOriginFunc:  func(r *http.Request, origin string) bool { return true },
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Authorization", "Content-Type", "X-CSRF-Token"},
+		ExposedHeaders:   []string{"Link"},
+		AllowCredentials: false,
+		MaxAge:           300, // Maximum value not ignored by any of major browsers
+	}))
+
 	r.Use(middleware.RequestID)
 	r.Use(middleware.ClientIPFromRemoteAddr)
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-	r.Use(app.RateLimiterMiddleware)	
+	r.Use(app.RateLimiterMiddleware)
 
 	// r.Use(middleware.Timeout(60 * time.Second))
 	r.Use(Timeout(app.timeout))
@@ -110,6 +124,7 @@ func (app *application) mount() http.Handler {
 
 	r.Route("/api/v1", func(r chi.Router) {
 		r.Get("/health", app.healthCheckHandler)
+		r.With(app.BasicAuthMiddleware).Get("/debug/vars", expvar.Handler().ServeHTTP)
 
 		docsURL := "/api/v1/swagger/doc.json"
 		r.Get("/swagger/*", httpSwagger.Handler(httpSwagger.URL(docsURL)))

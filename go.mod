@@ -18,6 +18,7 @@ require (
 
 require (
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
+	github.com/go-chi/cors v1.2.2 // indirect
 	github.com/redis/go-redis/v9 v9.23.0 // indirect
 	github.com/sendgrid/rest v2.6.9+incompatible // indirect
 	go.uber.org/atomic v1.12.0 // indirect

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"expvar"
 	"log"
+	"runtime"
 	"time"
 
 	"github.com/go-playground/validator/v10"
@@ -152,6 +154,14 @@ func main() {
 	}
 
 	logger.Infof("server is running at: http://localhost%s", app.config.addr)
+
+	expvar.NewString("version").Set(version)
+	expvar.Publish("database", expvar.Func(func() any {
+		return db.Stats()
+	}))
+	expvar.Publish("goroutine", expvar.Func(func() any {
+		return runtime.NumGoroutine()
+	}))
 
 	logger.Fatal(app.run(app.mount()))
 }
