@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 )
 
@@ -66,5 +67,16 @@ func (app *application) forbiddenError(w http.ResponseWriter, r *http.Request, e
 	writeJson(w, http.StatusForbidden, ErrorResponse{
 		Success: false,
 		Message: err.Error(),
+	})
+}
+
+func (app *application) rateLimitExceedResponse(w http.ResponseWriter, r *http.Request, retryAfter string) {
+	app.logger.Warnw("rate limit exceeded", "method", r.Method, "path", r.URL.Path)
+
+	w.Header().Set("Retry-After", retryAfter)
+
+	writeJson(w, http.StatusTooManyRequests, ErrorResponse{
+		Success: false,
+		Message: fmt.Sprintf("rate limit exceeded, retry after: %s", retryAfter),
 	})
 }
